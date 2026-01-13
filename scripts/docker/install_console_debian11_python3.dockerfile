@@ -20,6 +20,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     curl \
     dos2unix \
     ffmpeg \
+    gh \
     git \
     gnupg \
     libavcodec-dev \
@@ -86,10 +87,9 @@ RUN ln -sf /opt/python37/bin/python3.7 /usr/local/bin/python3 && \
     ln -sf /opt/python37/bin/python3.7 /usr/local/bin/python && \
     ln -sf /opt/python37/bin/pip3.7 /usr/local/bin/pip3 && \
     ln -sf /opt/python37/bin/pip3.7 /usr/local/bin/pip && \
-    /opt/python37/bin/python3.7 -m pip install --upgrade pip setuptools wheel
+    /opt/python37/bin/python3.7 -m pip install --upgrade pip setuptools wheel && \
+    echo "export PATH=/opt/python37/bin:$PATH" >> /root/.bashrc
 
-# Set MALMO_XSD_PATH to download install location.
-ENV MALMO_XSD_PATH=/root/MalmoPlatform/Schemas
 # Pass in --build-arg MALMOVERSION="x.x.x" to re-install
 ARG MALMOVERSION=unknown
 
@@ -109,8 +109,13 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     /opt/python37/bin/pip3.7 install --index-url https://test.pypi.org/simple/ \
     "malmo==0.36.0"
 
+# Set MALMO_XSD_PATH to download install location.
+ENV MALMO_XSD_PATH=/root/MalmoPlatform/Schemas
 # Download and build Minecraft mod
-RUN /opt/python37/bin/python3.7 -c "import malmo.minecraftbootstrap;malmo.minecraftbootstrap.download(buildMod=True)"
+RUN cd /root && \
+    /opt/python37/bin/python3.7 -c "import malmo.minecraftbootstrap;malmo.minecraftbootstrap.download(buildMod=True)" && \
+    test -f /root/MalmoPlatform/VERSION && \
+    echo "export MALMO_XSD_PATH=/root/MalmoPlatform/Schemas" >> /root/.bashrc
 
 COPY ./console_startup.sh /root/console_startup.sh
 RUN dos2unix /root/console_startup.sh && chmod +x /root/console_startup.sh
